@@ -1,0 +1,279 @@
+---
+title: "Annual Surface Temperature Change Effects on Endangered Species"
+author: "Lucy Shettel"
+date: May 5, 2023
+output: 
+  html_notebook: 
+    toc: true
+    toc_depth: 1
+    theme: journal
+---
+
+![IUCN Red List Stats](Desktop/GCS-R/Red_List_image.png)
+
+
+# Aim
+I aim to explore how **climate change affects endangered species** throughout the world. I am interested in studying how trends in global warming, specifically **annual surface temperature change**, impact endangered species. I plan to **compare yearly climate change trends with the number of endangered species on the Red List from `r esby_totals$Year[1]` to `r esby_totals$Year[nrow(esby_totals)]`.** Hsiung and Sunstein (2007) mention that the current effects of climate change have already impacted animal life substantially (p. 1696). On a more governmental approach to this issue, Rhul (2008) explores what actions the US Fish and Wildlife Service (FWS) should take to support the Endangered Species Act (ESA) (p. 13). Unfortunately, as of 2019, agency plans remained inadequate in relation to conservation of US endangered species according to Delach, Caldas, Edson, et al. (p. 999). I will also perform a study of the **correlation between annual surface temperature change per country with the top ten countries with the most endangered species (as of 2019).** 
+
+# General Question of Investigation
+> _How does climate change impact the number of endangered species?_ 
+
+# Scope and System
+The scope of the analysis will be conducted globally by studying global climate change patterns as well as globally threatened species. The system will examine the interactions between annual changes in surface temperature and number of endangered species. The project will primarily focus on climate change and the number of endangered species on the Red List from `r esby_totals$Year[1]` to `r esby_totals$Year[nrow(esby_totals)]` per year, as well as how surface temperature changes in each country affect the number of endangered species in the ten countries with the most endangered species as of 2019.
+
+
+# Methods
+Data was collected from existing datasets found on the Internet. Data has been found on the [IMF climate change dashboard](https://climatedata.imf.org/pages/climatechange-data) for annual surface temperature change from 1961 to 2022 per country. Endangered species data (“[Number of endangered species on the Red List from 1996 to 2022](https://www.statista.com/statistics/264841/biodiversity-animals-on-the-red-list/)") has been collected by the Statista Research Department to examine the relationship between climate change and the number of endangered species. These data sets were joined on the basis of year. The figures in the project displayed global warming trends as well as their relationship with the number of endangered species on the Red List. Using the same dataset for annual surface temperature change as well as the dataset “[Countries with the most endangered species 2019](https://www.statista.com/statistics/1275491/most-endangered-species-by-country/),” a study of the correlation between surface temperature change per country and the number of endangered species per country was able to be conducted. These datasets were joined on the basis of country to compare the relationship between climate change trends and the number of endangered species per country for ten countries. In order to view the relationship between countries and the number of endangered species on a map, the "[Countries geographic coordinates](https://www.kaggle.com/datasets/eidanch/counties-geographic-coordinates)" dataset was used to obtain the latitude and longitude values for each country. 
+
+# Results
+
+```{r load packages, include = FALSE}
+library(forcats)
+library(mapview)
+library(tidyverse)
+library(viridis)
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+```
+
+
+```{r load data, include = FALSE}
+surface_temp <- read_csv("/Users/lucyshettel/Desktop/GCS-R/Annual_Surface_Temperature_Change.csv")
+endangered_species_by_year <- read_csv("/Users/lucyshettel/Desktop/GCS-R/Endangered_Species_Year.csv")
+country_endang_species <- read_csv("/Users/lucyshettel/Desktop/GCS-R/Animal_Country_2019.csv")
+countries <- read_csv("/Users/lucyshettel/Desktop/GCS-R/countries.csv")
+```
+
+```{r Yearly Avg Temperatures, include = FALSE}
+
+#Select years from surface temperature data 
+year_col <- select(surface_temp, starts_with('F'))
+
+#Calculate average temperature increase per year
+yearly_avg_temp <- year_col %>%
+  summarise(across(where(is.numeric), mean, na.rm = TRUE)) %>%
+  pivot_longer(
+    cols = F1961:F2022, 
+    names_to = "year", 
+    values_to = "avg_temp")
+```
+
+
+```{r Display Annual Surface Temperature Changes, echo = FALSE}
+
+#Create graph displaying annual surface temperature changes in relation to a baseline climatology 
+ggplot(data = yearly_avg_temp) + 
+  geom_bar(mapping = aes(x = year, y = avg_temp, fill = avg_temp), stat = "identity") + 
+  labs(x = "Year", y = "Average Change in Surface Temperature (°C)", title = "Annual mean surface temperature change\nmeasured with respect to a baseline climatology,\ncorresponding to the years 1951-1980") +
+  theme_dark() +
+  theme(axis.text.x = element_text(angle = 65, hjust =1, size = 6.5), plot.title = element_text(size=15, face="bold",  hjust = 0.5)) +
+  scale_fill_continuous(low="yellow", high = "red", name = "Average\nTemperature\nChange (°C)") +
+  scale_x_discrete("Year", labels = substr(yearly_avg_temp$year, 2,5))
+```
+
+This first graph displays annual surface temperature changes per year in relation to a baseline climatology conducted for the years 1951 to 1980. Beginning in 1977, the figure demonstrates a general positive trend such that as the years progress, the average surface temperature increases.
+
+```{r Endangered Species By Year, echo = FALSE}
+
+#Create table containing just the numbers of endangered species per kingdom
+endang_spec <- select(endangered_species_by_year, -Year)
+
+#Calculate total number of endangered species per year (row) 
+esby_with_totals <- endangered_species_by_year %>% 
+  mutate(total = rowSums(endang_spec, na.rm=TRUE))
+
+#Display graph of the total number of reported endangered species per year
+ggplot(data = esby_with_totals) + 
+  geom_bar(mapping = aes(x = Year, y = total, fill = total), stat = "identity") + 
+  labs(x = "Year", y = "Total Number of Endangered Species", title = "Total Number of Endangered Species on the IUCN Red List\nper Year from 1996-2022") +
+  scale_fill_viridis() + theme_dark() +
+  theme(axis.text.x = element_text(angle = 45, hjust =1), plot.title = element_text(size=15, face="bold", hjust = 0.5)) +
+  geom_text(aes(x = Year, y = total-1000, label = total), size = 1.5, color = "grey")
+
+```
+
+This figure displays the number of endangered species on the Red List reported by the International Union for Conservation of Nature and Natural Resources (IUCN) per year. Based on this graph, it is evident that there is a positive trend between the total number of endangered species and year, such that as the years progress, the total number of species on the Red List increases. Over 40,000 species (`r esby_with_totals$total[nrow(esby_with_totals)]` to be exact) were on the IUCN Red List in 2022.   
+
+```{r Display Endangered Species by Kingdom, echo = FALSE, warning = FALSE}
+
+#Create table to display the total number of endangered species per kingdom per year
+kingdoms <- esby_with_totals %>%
+  pivot_longer(
+    cols = Vertebrates:`Fungi & Protists`, 
+    names_to = "kingdom", 
+    values_to = "amount")
+
+
+#Display the number of endangered species per kingdom per year
+ggplot(data = kingdoms, aes(x = Year, y = amount, fill = kingdom)) + 
+  geom_bar(stat = "identity") + 
+  labs(x = "Year", y = "Number of Endangered Species", title = "Number of Endangered Species on the IUCN Red List\nper Kingdom per Year from 1996-2022") +
+  coord_flip() +
+  theme_dark() +
+  theme(plot.title = element_text(size=15, face="bold", hjust = 0.5))
+
+```
+
+This figure breaks down the total number of endangered species on the Red List per year into kingdoms. It is evident that there is the largest number of endangered plant species reported per year while fungi & protists have the fewest reported endangered species (with none reported before 2003). In 2022 alone, over half of the reported endangered species were plants!
+
+
+```{r Combine Endangered Species Data with Surface Temp. Change, echo = FALSE, warning = FALSE}
+
+#Create table with endangered species data for 1996/1998 separated into their own rows
+esby_totals <- esby_with_totals %>%
+  separate(Year, into = "Year", sep = "/") %>%
+  add_row(Year = '1998', Vertebrates = 3314, Invertebrates = 1891, Plants = 5328, total = 10533, .after = 1)
+
+#Create tibble of yearly average surface temperature change
+avg_temp_adjusted <- tibble(Year = 1961:2022, avg_temp = yearly_avg_temp$avg_temp)
+
+#Change Year column type to integer so it is compatible with the year column in avg_temp_adjusted
+esby_totals <- transform(esby_totals, Year = as.numeric(Year))
+
+#Join temperature change data with endangered species data
+joined_species_temp <- right_join(avg_temp_adjusted, esby_totals)
+
+#Display endangered species data in relation to yearly surface temperature change
+ggplot(data = joined_species_temp) + 
+  geom_bar(mapping = aes(x = Year, y = total, fill = avg_temp), stat = "identity") + 
+  labs(x = "Year", y = "Total Number of Endangered Species", title = "Total number of endangered species on the IUCN Red List\nin relation to the annual mean surface temperature change\n(Bar Graph)") +
+  theme_dark() +
+  theme(axis.text.x = element_text(angle = 30, hjust =1), plot.title = element_text(size=15, face="bold",  hjust = 0.5)) +
+  scale_fill_continuous(low="yellow", high = "red", name = "Average\nTemperature\nChange (°C)")
+
+```
+This graph displays the total number of endangered species on the IUCN Red List from 1996-2022 in relation to the annual surface temperature change measured with respect to a baseline climatology conducted from 1951 to 1980. Although the average surface temperature change fluctuates slightly over the years, there is a general increase in temperature. This figure illustrates that as the years progress, the total number of endangered species on the Red List increases, and there is a general incrase in surface temperature as well.
+
+```{r Scatter plot displaying endangered species and surface temperature change data, echo= FALSE, warning=FALSE}
+
+#Geom_point of endangered species and surface temperature
+ggplot(data = joined_species_temp) + 
+  geom_point(mapping = aes(x = Year, y = total, color = avg_temp)) + 
+  labs(x = "Year", y = "Total Number of Endangered Species", title = "Total number of endangered species on the IUCN Red List\nin relation to the annual mean surface temperature change\n(Scatter Plot)") +
+  theme_dark() +
+  theme(axis.text.x = element_text(angle = 30, hjust =1), plot.title = element_text(size=15, face="bold",  hjust = 0.5)) +
+  scale_color_continuous(low="yellow", high = "red", name = "Average\nTemperature\nChange (°C)") + 
+  geom_smooth(mapping = aes(x = Year, y = total), color = "white", linewidth = 0.5)
+```
+
+This figure illustrates an exponential relationship between the total number of endangered species on the Red List and time. The color of the points demonstrates that there is a general increase in average surface temperature over time as well. 
+
+## _Now let's investigate these trends by country:_
+
+```{r Number of Endangered Species Per Country as of 2019, echo = FALSE}
+
+#Create data frame of top 10 countries with the most reported endangered species
+top_10 <- country_endang_species %>%
+  arrange(desc(Total)) %>%
+  filter(Rank < 11) 
+
+#Create graph displaying the total number of endangered species per country
+ggplot(data = top_10, mapping = aes(x = Total, y = fct_reorder(Country, Total), fill = Total)) +
+  geom_bar(stat = "identity") + 
+  labs(x = "Total Number of Endangered Species", y = "Countries with the Most Endangered Species", title = "Total Number of Endangered Species per Country\n(as of 2019)") +
+  scale_fill_viridis() + theme_dark() +
+  theme(plot.title = element_text(size=15, face="bold", hjust = 0.5)) +
+  geom_text(aes(x = Total-20, label = Total), color = "gray", size = 3)
+```
+
+This figure displays the number of endangered species reported per country as of 2019. This figure focuses on the top 10 countries with the largest numbers of endangered species, making it evident that Mexico has the most (`r top_10$Total[1]` species to be exact). The United States is ranked #`r top_10$Rank[6]` with `r top_10$Total[6]` endangered species as of 2019.
+
+## Map Displaying the Number of Endangered Species per Country 
+
+```{r Map of Endangered Species per country as of 2019, echo = FALSE, warning = FALSE}
+
+#Add latitude and longitude information to the surface temperature change data
+lat_long <- countries %>%
+  mutate(ISO2 = country) %>%
+  inner_join(surface_temp, by = "ISO2")
+
+#Add the number of endangered species to the previously joined dataset
+countries_temps_species <- lat_long %>%
+  inner_join(country_endang_species, by = "Country")
+
+#Create map displaying the locations of endangered species with the color of the point representing the total number
+mapview(countries_temps_species, xcol = "longitude", ycol = "latitude", zcol = "Total", crs = 4326, grid = FALSE, label = "Total")
+
+```
+This map illustrates where in the world countries with reported numbers of endangered species are located. The color of the point correlates to the total number of endangered species for that particular country. `r top_10$Country[1]` has a bright yellow point because it has the highest reported number of endangered species. Many of the other countries have less than 100 endangered species, explaining the abundance of purple points.
+
+
+```{r World Temps, include = FALSE}
+
+#2019 surface temperature changes
+temps_2019 <- surface_temp %>%
+  select(Country, ISO3, F2019) %>%
+  mutate(iso_a3 = ISO3)
+
+#data to create world map
+world <- ne_countries(scale = "large", returnclass = "sf")
+
+#Merge 2019 temperature data with the world map data to display
+map_data <- merge(world, temps_2019, by = "iso_a3", all.x = TRUE)
+
+#Add 'name' column to top_10 to join the tables
+top_10 <- top_10 %>%
+  mutate(name_long = Country)
+
+#Merge the endangered species per country data with the previously merged data
+top_10_coord <- merge(top_10, map_data, by = "name_long")
+```
+
+```{r List Colnames for map_data, include = FALSE}
+
+#List column names for map_data to ensure continent data is included 
+colnames(map_data)
+
+```
+
+```{r Facet by continent, echo = FALSE, warning = FALSE}
+
+ggplot(data = map_data) + 
+  geom_bar(mapping = aes(x = Country, y = F2019, fill = F2019), stat = "identity") + 
+  facet_wrap(~ continent, nrow = 2) +
+  labs(x = "Country", y = "Change in Surface Temperature (°C)", title = "2019 Surface temperature change per country\nmeasured with respect to a baseline climatology\n(Bar Graph)")+
+  theme_dark() +
+  theme(axis.text.x = element_text(angle = 65, hjust =1, size = 1), plot.title = element_text(size=15, face="bold",  hjust = 0.5), strip.text = element_text(size = 7)) +
+  scale_fill_continuous(low="yellow", high = "red", name = "Temperature\nChange\nin 2019 (°C)")
+
+```
+
+This figure makes it evident that European countries have experienced the greatest surface temperature changes due to the abundance of red bars. Oceania and South America appear to have less data points, yet also lesser changes in surface temperature as of 2019. There was no data for Antarctica.
+
+```{r Map of surface temp changes per country, echo = FALSE, warning = FALSE}
+ggplot(data = map_data, aes(geometry = geometry)) +
+  geom_sf(aes(fill = F2019)) +
+  geom_sf_label(aes(label = Total), data = top_10_coord, label.padding = unit(0.1, "lines"), size = 1.5) +
+  labs(x = " ", y = " ", title = "2019 Surface temperature change per country\nmeasured with respect to a baseline climatology\n(Map)") +
+  theme(plot.title = element_text(size=15, face="bold",  hjust = 0.5)) +
+  scale_fill_continuous(low="yellow", high = "red", name = "Temperature\nChange\nin 2019 (°C)")
+```
+
+This map illustrates surface temperature change in 2019 per country measured with respect to a baseline climatology (conducted from 1951-1980). The scale on the right indicates that the darker the country is filled in, the higher the change in surface temperature it experienced in 2019. The labels indicate the number of endangered species in the top 10 countries with the highest number of reported endangered species as of 2019. Although `r top_10$Country[1]` has the most endangered species, it has not necessarily experienced the greatest change in surface temperature. 
+
+# Main Conclusions 
+The main conclusions demonstrated by the figures above show that the number of endangered species increases as surface temperatures increase, although there isn't necessarily a direct correlation between the two. The study of these trends will benefit government agencies such as the World Wildlife Fund, the U.S. Fish and Wildlife Service, and other agencies interested in the preservation of endangered animal species. These interactions can be studied more closely in the future by focusing on a particular geographic area and the types of endangered species located there. There is no singular solution to global warming, however in order for certain species to remain existent on Earth, something must be done to slow climate change.
+
+![Ten animals on The IUCN Red List of Threatened Species](Desktop/GCS-R/end.jpg)
+
+# References
+Alves, B. (2023). Countries with the most endangered species 2019. Statista. Retrieved April 24, 2023, from https://www.statista.com/statistics/1275491/most-endangered-species-by-country/
+
+Delach, A., Caldas, A., Edson, K.M. et al. (2019) Agency plans are inadequate to conserve US endangered species under climate change. Nature Climate Change, 9, 999–1004. 
+https://doi.org/10.1038/s41558-019-0620-8
+
+Cohen, E. (n.d.). Countries geographic coordinates. Kaggle. Retrieved April 26, 2023, from https://www.kaggle.com/datasets/eidanch/counties-geographic-coordinates
+
+Flach, T. (2020). 26 endangered animals we need to save now. CN Traveller. Retrieved April 29, 2023, from https://www.cntraveller.com/gallery/endangered-animals
+
+Hsiung, W., & Sunstein, C. R. (2007). Climate change and animals. University of Pennsylvania Law Review, 155(6), 1695-1740.
+
+International Monetary Fund. (2022). Climate Change Data. Climate Change Indicators Dashboard. Retrieved April 21, 2023, from https://climatedata.imf.org/pages/climatechange-data
+
+Ruhl, J. J. (2008). Climate change and the endangered species act: building bridges to the 
+no-analog future. Boston University Law Review, 88(1), 1-62. 
+
+Statista Research Department. (2022). Species on the Red List up to 2022. Statista. Retrieved April 21, 2023, from https://www.statista.com/statistics/264841/biodiversity-animals-on-the-red-list/
+
+
