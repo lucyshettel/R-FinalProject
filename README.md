@@ -13,16 +13,21 @@ Final Project from Global Change science: Analytics with R emphasizing the effec
 Main Conclusions: The main conclusions expected to be seen are that the number of endangered species increases as surface temperatures increase. This study will benefit government agencies such as the U.S. Fish and Wildlife Service and other agencies interested in the preservation of endangered animal species. These interactions can be studied more closely in the future by focusing on a particular geographic area and the types of endangered species located there. There is no singular solution to global warming, however in order for certain species to remain existent on Earth, something must be done to slow climate change.  
 
 **References**
+
 Alves, B. (2023, February 16). Countries with the most endangered species 2019. Statista. Retrieved April 24, 2023, from https://www.statista.com/statistics/1275491/most-endangered-species-by-country/
+
 Delach, A., Caldas, A., Edson, K.M. et al. (2019) Agency plans are inadequate to conserve US 
 endangered species under climate change. Nature Climate Change, 9, 999–1004. 
 https://doi.org/10.1038/s41558-019-0620-8
+
 Cohen, E. (n.d.). Countries geographic coordinates. Kaggle. Retrieved April 26, 2023, from https://www.kaggle.com/datasets/eidanch/counties-geographic-coordinates
 Hsiung, W., & Sunstein, C. R. (2007). Climate change and animals. University of Pennsylvania 
 Law Review, 155(6), 1695-1740.
+
 International Monetary Fund. (2022). Climate Change Data. Climate Change Indicators Dashboard. Retrieved April 21, 2023, from https://climatedata.imf.org/pages/climatechange-data
 Ruhl, J. J. (2008). Climate change and the endangered species act: building bridges to the 
 no-analog future. Boston University Law Review, 88(1), 1-62. 
+
 Statista Research Department. (2022, December 9). Species on the Red List up to 2022. Statista. Retrieved April 21, 2023, from https://www.statista.com/statistics/264841/biodiversity-animals-on-the-red-list/
 
 
